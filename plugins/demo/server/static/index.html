@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Демонстрация возможностей плагинов</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+
+<body>
+<div class="global-loading" id="global-loading">
+    <span class="spinner"></span> <span>Выполняется запрос...</span>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="container">
+    <header>
+        <h1>Демонстрация возможностей плагинов</h1>
+        <p>Интерактивная документация всех возможностей, предоставляемых core для плагинов</p>
+    </header>
+
+    <!-- 1. Storage -->
+    <div class="section">
+        <h2>1. Storage - работа с request/response</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Storage предоставляет универсальный интерфейс для передачи данных между плагинами через request и response. Это основа для цепочки выполнения плагинов.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Покажет все данные из request Storage</li>
+                <li>Включая ExecutionPlan (если есть, ключ "_execute_plan_")</li>
+                <li>Покажет структуру данных Storage в JSON формате</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже в JSON формате</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/storage" hx-target="#storage-result" hx-swap="innerHTML" hx-indicator="#storage-spinner">
+                Получить данные из Storage <span id="storage-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="storage-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 2. Логирование -->
+    <div class="section">
+        <h2>2. Логирование - уровни логов</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Логирование через slog позволяет плагинам отправлять сообщения разных уровней важности (Debug, Info, Warn, Error) в консоль хоста.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Отправит сообщения на уровнях Debug, Info, Warn, Error</li>
+                <li>Логи будут видны в консоли хоста</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Логи появятся в консоли, где запущен плагин</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/logging" hx-vals='{"level":"debug"}' hx-target="#logging-result" hx-swap="innerHTML" hx-indicator="#logging-spinner">
+                Debug <span id="logging-spinner" class="spinner htmx-indicator"></span>
+            </button>
+            <button hx-post="/api/demo/logging" hx-vals='{"level":"info"}' hx-target="#logging-result" hx-swap="innerHTML" hx-indicator="#logging-spinner">
+                Info <span class="spinner htmx-indicator"></span>
+            </button>
+            <button hx-post="/api/demo/logging" hx-vals='{"level":"warn"}' hx-target="#logging-result" hx-swap="innerHTML" hx-indicator="#logging-spinner">
+                Warn <span class="spinner htmx-indicator"></span>
+            </button>
+            <button hx-post="/api/demo/logging" hx-vals='{"level":"error"}' hx-target="#logging-result" hx-swap="innerHTML" hx-indicator="#logging-spinner">
+                Error <span class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="logging-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 3. Файловая система -->
+    <div class="section">
+        <h2>3. Файловая система - WASI</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> WASI (WebAssembly System Interface) предоставляет доступ к файловой системе хоста через стандартные Go функции (os.ReadFile, os.WriteFile, os.Mkdir и т.д.).</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Создаст директорию /tg/tmp/demo/</li>
+                <li>Создаст файл /tg/tmp/demo/test.txt с содержимым</li>
+                <li>Прочитает созданный файл</li>
+                <li>Покажет результат операций</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже, файлы будут созданы в /tg/tmp/demo/</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/filesystem" hx-target="#filesystem-result" hx-swap="innerHTML" hx-indicator="#filesystem-spinner">
+                Создать файлы <span id="filesystem-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="filesystem-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 4. HTTP клиент -->
+    <div class="section">
+        <h2>4. HTTP клиент - выполнение запросов</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> HTTP клиент позволяет плагинам выполнять HTTP запросы к внешним сервисам через хост.</p>
+            <p><strong>Ограничение:</strong> В WASM окружении запросы к самому себе (localhost) могут не работать из-за архитектурных ограничений WASM runtime. Используйте внешние URL для надежной работы.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Выполнит GET запрос к внешнему сервису (httpbin.org)</li>
+                <li>Выполнит POST запрос с телом к внешнему сервису</li>
+                <li>Покажет статус, заголовки и тело ответа</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже в JSON формате.</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/http-client" hx-vals='{"method":"GET","url":"https://httpbin.org/get"}' hx-target="#http-client-result" hx-swap="innerHTML" hx-indicator="#http-client-spinner">
+                GET httpbin.org/get <span id="http-client-spinner" class="spinner htmx-indicator"></span>
+            </button>
+            <button hx-post="/api/demo/http-client" hx-vals='{"method":"POST","url":"https://httpbin.org/post","body":"{\"message\":\"Hello from HTTP client!\"}"}' hx-target="#http-client-result" hx-swap="innerHTML" hx-indicator="#http-client-spinner">
+                POST httpbin.org/post <span class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="http-client-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 5. HTTP сервер -->
+    <div class="section">
+        <h2>5. HTTP сервер - запуск и обработчики</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> HTTP сервер позволяет плагинам запускать собственный веб-сервер и регистрировать обработчики для различных эндпоинтов. Эта страница уже работает на запущенном сервере.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Покажет текущий статус сервера</li>
+                <li>Покажет зарегистрированные эндпоинты</li>
+                <li>Сервер уже запущен (иначе вы бы не видели эту страницу)</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Статус отобразится ниже. Можно протестировать через раздел "HTTP клиент".</p>
+            <p><strong>Остановка сервера:</strong> При остановке сервера метод Execute завершится. Хост автоматически остановит HTTP сервер при завершении Execute.</p>
+        </div>
+        <div class="actions">
+            <button hx-get="/api/demo/server/status" hx-target="#server-result" hx-swap="innerHTML" hx-indicator="#server-spinner">
+                Получить статус <span id="server-spinner" class="spinner htmx-indicator"></span>
+            </button>
+            <button class="danger" hx-post="/api/demo/stop" hx-target="#server-result" hx-swap="innerHTML" hx-indicator="#server-stop-spinner">
+                Остановить сервер <span id="server-stop-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="server-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 6. Команды хоста -->
+    <div class="section">
+        <h2>6. Команды хоста - выполнение команд</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Выполнение команд через хост позволяет плагинам запускать системные команды на хосте (например, go, git, uname) с контролем через белый список.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Выполнит команду uname -a</li>
+                <li>Выполнит команду go version</li>
+                <li>Выполнит команду date</li>
+                <li>Покажет stdout, stderr и exit code</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/command" hx-vals='{"command":"uname","args":["-a"]}' hx-target="#command-result" hx-swap="innerHTML" hx-indicator="#command-spinner">
+                uname -a <span id="command-spinner" class="spinner htmx-indicator"></span>
+            </button>
+            <button hx-post="/api/demo/command" hx-vals='{"command":"go","args":["version"]}' hx-target="#command-result" hx-swap="innerHTML" hx-indicator="#command-spinner">
+                go version <span class="spinner htmx-indicator"></span>
+            </button>
+            <button hx-post="/api/demo/command" hx-vals='{"command":"date"}' hx-target="#command-result" hx-swap="innerHTML" hx-indicator="#command-spinner">
+                date <span class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="command-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 7. План выполнения -->
+    <div class="section">
+        <h2>7. План выполнения - визуализация</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> ExecutionPlan содержит информацию о плане выполнения плагинов. Визуализация помогает понять последовательность и параллельность выполнения шагов.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Получит ExecutionPlan из request (ключ "_execute_plan_")</li>
+                <li>Сгенерирует SVG граф с шагами выполнения</li>
+                <li>Покажет последовательные шаги выполнения</li>
+                <li>Подсветит текущий шаг</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → SVG граф отобразится ниже. JSON план можно посмотреть в разделе "Storage".</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/plan" hx-target="#plan-result" hx-swap="innerHTML" hx-indicator="#plan-spinner">
+                Визуализировать план <span id="plan-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="plan-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 8. Информация о хосте -->
+    <div class="section">
+        <h2>8. Информация о хосте</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Получение информации о системе хоста через выполнение команд позволяет плагинам адаптироваться к окружению выполнения.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Выполнит команды для получения информации о системе</li>
+                <li>Соберет данные об OS, Go версии, времени и т.д.</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже</p>
+        </div>
+        <div class="actions">
+            <button hx-get="/api/demo/host-info" hx-target="#host-info-result" hx-swap="innerHTML" hx-indicator="#host-info-spinner">
+                Обновить информацию <span id="host-info-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="host-info-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 9. Переменные окружения -->
+    <div class="section">
+        <h2>9. Переменные окружения - доступ к env</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Переменные окружения позволяют плагинам получать информацию о системе хоста через белый список AllowedEnvVars.</p>
+            <p>
+                <strong>TG_LANG:</strong> Специальная переменная окружения, которая автоматически передается всем плагинам хостом. Содержит язык интерфейса в формате ISO2a (например, "en", "ru", "de"), определенный хостом на основе системных настроек (LC_ALL, LC_MESSAGES, LANG). Используется для локализации сообщений плагина. Не требует указания в AllowedEnvVars - доступна автоматически.
+            </p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Получит переменные окружения из белого списка AllowedEnvVars</li>
+                <li>Покажет TG_LANG (доступна автоматически)</li>
+                <li>Покажет доступные переменные и их значения</li>
+                <li>Продемонстрирует работу с os.Getenv()</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже. TG_LANG доступна автоматически, остальные переменные - только из AllowedEnvVars.</p>
+        </div>
+        <div class="actions">
+            <button hx-get="/api/demo/env" hx-target="#env-result" hx-swap="innerHTML" hx-indicator="#env-spinner">
+                Получить переменные окружения <span id="env-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="env-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 10. Интерактивный выбор -->
+    <div class="section">
+        <h2>10. Интерактивный выбор - Interactive Select</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Interactive Select позволяет плагинам запрашивать выбор пользователя из списка опций через консоль. Это полезно для интерактивных плагинов, которые требуют выбора пользователя.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>В консоли, где запущен плагин, появится интерактивный prompt с опциями</li>
+                <li>Вы сможете выбрать одну из опций в консоли</li>
+                <li>Результат выбора отобразится в веб-интерфейсе ниже</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Сначала проверьте консоль, где запущен плагин - там появится интерактивный выбор. После выбора результат отобразится ниже в JSON формате.</p>
+        </div>
+        <div class="actions">
+            <button hx-post="/api/demo/interactive-select" hx-vals='{"prompt":"Выберите опцию:","options":["Опция 1","Опция 2","Опция 3"]}' hx-target="#interactive-select-result" hx-swap="innerHTML" hx-indicator="#interactive-select-spinner">
+                Запустить выбор опций <span id="interactive-select-spinner" class="spinner htmx-indicator"></span>
+            </button>
+        </div>
+        <div id="interactive-select-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 11. Вычисление хэша файла -->
+    <div class="section">
+        <h2>11. Вычисление хэша файла - загрузка и хэширование</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Демонстрация загрузки файла через drag-and-drop и вычисления его SHA256 хэша. Показывает работу с multipart/form-data запросами.</p>
+            <p><strong>Что произойдет:</strong></p>
+            <ul>
+                <li>Вы сможете перетащить файл в зону загрузки или выбрать файл через кнопку</li>
+                <li>Файл будет загружен на сервер</li>
+                <li>Будет вычислен SHA256 хэш файла</li>
+                <li>Результат отобразится ниже с именем файла, размером и хэшем</li>
+            </ul>
+            <p><strong>Куда смотреть:</strong> → Результат отобразится ниже с хэшем файла</p>
+        </div>
+        <div class="actions">
+            <div class="file-drop-zone" id="file-drop-zone" onclick="document.getElementById('file-input').click()">
+                <div class="file-icon">📁</div>
+                <p><strong>Перетащите файл сюда</strong></p>
+                <p>или</p>
+                <p>нажмите для выбора файла</p>
+            </div>
+            <input type="file" id="file-input" class="file-input"/> <span id="file-hash-spinner" class="spinner htmx-indicator"></span>
+            <div id="progress-container" class="progress-container">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%">0%</div>
+                </div>
+                <div id="progress-text" class="progress-text">Подготовка файла...</div>
+            </div>
+        </div>
+        <div id="file-hash-result" class="result">
+            <div class="loading-text htmx-indicator">Загрузка...</div>
+        </div>
+    </div>
+
+    <!-- 12. Задачи - периодическое выполнение -->
+    <div class="section">
+        <h2>12. Задачи - периодическое выполнение</h2>
+        <div class="description">
+            <p><strong>Назначение:</strong> Задачи позволяют плагинам выполнять периодические действия в фоне. Это полезно для мониторинга, сбора статистики и автоматизации повторяющихся операций.</p>
+            <p><strong>Возможности:</strong></p>
+            <ul>
+                <li><strong>StartTask(interval, handler)</strong> - запуск задачи с указанным интервалом</li>
+                <li><strong>StopTask(taskID)</strong> - остановка конкретной задачи</li>
+                <li><strong>StopAll()</strong> - остановка всех активных задач</li>
+                <li><strong>Автоматическая остановка</strong> - если handler возвращает false, задача останавливается автоматически</li>
+            </ul>
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li>Задачи выполняются в фоне хостом</li>
+                <li>Handler вызывается с указанным интервалом</li>
+                <li>Данные логируются в консоль (slog) и сохраняются для отображения в веб-интерфейсе</li>
+                <li>Если handler возвращает false, задача автоматически останавливается</li>
+            </ul>
+        </div>
+
+        <!-- Статус всех задач -->
+        <div style="margin: 20px 0;">
+            <h3 style="color: #34495e; margin-bottom: 10px;">Статус задач</h3>
+            <div class="actions">
+                <button hx-get="/api/demo/tasks/status" hx-target="#tasks-status" hx-swap="innerHTML" hx-indicator="#tasks-spinner" hx-trigger="load, every 2s">
+                    Обновить статус <span id="tasks-spinner" class="spinner htmx-indicator"></span>
+                </button>
+                <button class="danger" hx-post="/api/demo/tasks/stop-all" hx-swap="none" hx-indicator="#tasks-stop-all-spinner" hx-on::after-request="handleStopAllTasks(event)">
+                    Остановить все задачи <span id="tasks-stop-all-spinner" class="spinner htmx-indicator"></span>
+                </button>
+            </div>
+            <div id="tasks-status" class="result" style="margin-top: 15px;">
+                <div class="loading-text htmx-indicator">Загрузка...</div>
+            </div>
+        </div>
+
+        <!-- Сценарии демонстрации -->
+        <div style="margin-top: 30px;">
+            <h3 style="color: #34495e; margin-bottom: 15px;">Сценарии демонстрации</h3>
+
+            <div class="tabs">
+                <div class="tabs-header">
+                    <button class="tab-button active" onclick="switchTab('counter')">Счетчик</button>
+                    <button class="tab-button" onclick="switchTab('monitor')">Мониторинг</button>
+                    <button class="tab-button" onclick="switchTab('stats')">Статистика</button>
+                </div>
+
+                <!-- 1. Счетчик -->
+                <div id="tab-counter" class="tab-content active">
+                    <h4>Счетчик (автостоп после 5 итераций)</h4>
+                    <p>
+                        Задача увеличивает счетчик каждые 2 секунды и автоматически останавливается после 5 выполнений. Логи выводятся в консоль, данные отображаются в веб-интерфейсе. </p>
+                    <div class="actions">
+                        <button hx-post="/api/demo/task/counter" hx-vals='{"interval":"2s","maxExecutions":"5"}' hx-swap="none" hx-indicator="#task-counter-spinner" hx-on::after-request="showTaskToast(event)">
+                            Запустить счетчик <span id="task-counter-spinner" class="spinner htmx-indicator"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Мониторинг времени -->
+                <div id="tab-monitor" class="tab-content">
+                    <h4>Мониторинг времени</h4>
+                    <p>
+                        Задача логирует текущее время каждые 3 секунды. Работает до ручной остановки. Временные метки сохраняются и отображаются в веб-интерфейсе. </p>
+                    <div class="actions">
+                        <button hx-post="/api/demo/task/monitor" hx-vals='{"interval":"3s"}' hx-swap="none" hx-indicator="#task-monitor-spinner" hx-on::after-request="showTaskToast(event)">
+                            Запустить мониторинг <span id="task-monitor-spinner" class="spinner htmx-indicator"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Сбор статистики -->
+                <div id="tab-stats" class="tab-content">
+                    <h4>Сбор статистики</h4>
+                    <p>
+                        Задача собирает статистику каждые 5 секунд. Демонстрирует работу с данными в задачах. Статистика сохраняется и отображается в веб-интерфейсе. </p>
+                    <div class="actions">
+                        <button hx-post="/api/demo/task/stats" hx-vals='{"interval":"5s"}' hx-swap="none" hx-indicator="#task-stats-spinner" hx-on::after-request="showTaskToast(event)">
+                            Запустить сбор статистики <span id="task-stats-spinner" class="spinner htmx-indicator"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Функция для форматирования JSON на странице
+    function formatJSON() {
+        document.querySelectorAll('pre.json').forEach(function (pre) {
+            try {
+                const text = pre.textContent.trim()
+                if (text && (text.startsWith('{') || text.startsWith('['))) {
+                    const parsed = JSON.parse(text)
+                    pre.textContent = JSON.stringify(parsed, null, 2)
+                }
+            } catch (e) {
+                // Если не JSON, оставляем как есть
+            }
+        })
+    }
+
+    // Форматируем JSON при загрузке страницы
+    document.addEventListener('DOMContentLoaded', formatJSON)
+
+    // Форматируем JSON после обновления контента через htmx
+    document.body.addEventListener('htmx:afterSwap', formatJSON)
+    document.body.addEventListener('htmx:afterSettle', formatJSON)
+
+    // Глобальный индикатор загрузки для длительных запросов
+    const globalLoading = document.getElementById('global-loading')
+    let loadingTimeout = null
+
+    document.body.addEventListener('htmx:beforeRequest', function (event) {
+        // Показываем глобальный индикатор через 100ms для длительных запросов
+        loadingTimeout = setTimeout(function () {
+            globalLoading.classList.add('active')
+        }, 100)
+    })
+
+    document.body.addEventListener('htmx:afterRequest', function (event) {
+        // Скрываем глобальный индикатор
+        if (loadingTimeout) {
+            clearTimeout(loadingTimeout)
+            loadingTimeout = null
+        }
+        globalLoading.classList.remove('active')
+    })
+
+    document.body.addEventListener('htmx:responseError', function (event) {
+        // Скрываем при ошибке
+        if (loadingTimeout) {
+            clearTimeout(loadingTimeout)
+            loadingTimeout = null
+        }
+        globalLoading.classList.remove('active')
+    });
+
+    (function () {
+        const dropZone = document.getElementById('file-drop-zone')
+        const fileInput = document.getElementById('file-input')
+        const resultDiv = document.getElementById('file-hash-result')
+        const progressContainer = document.getElementById('progress-container')
+        const progressFill = document.getElementById('progress-fill')
+        const progressText = document.getElementById('progress-text')
+
+        function updateProgress(percent, text) {
+            progressFill.style.width = percent + '%'
+            progressFill.textContent = Math.round(percent) + '%'
+            progressText.textContent = text
+        }
+
+        // Предотвращаем стандартное поведение браузера для drag-and-drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false)
+            document.body.addEventListener(eventName, preventDefaults, false)
+        })
+
+        function preventDefaults(e) {
+            e.preventDefault()
+            e.stopPropagation()
+        }
+
+        // Добавляем визуальную обратную связь при перетаскивании
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('dragover')
+            }, false)
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('dragover')
+            }, false)
+        })
+
+        // Обработка drop
+        dropZone.addEventListener('drop', handleDrop, false)
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer
+            const files = dt.files
+            if (files.length > 0) {
+                uploadFile(files[0])
+            }
+        }
+
+        // Обработка выбора файла через input
+        fileInput.addEventListener('change', function (e) {
+            if (e.target.files.length > 0) {
+                uploadFile(e.target.files[0])
+            }
+        })
+
+        function uploadFile(file) {
+            // Проверяем размер файла (максимум 50MB)
+            const maxSize = 50 * 1024 * 1024 // 50MB
+            if (file.size > maxSize) {
+                resultDiv.innerHTML = '<div class="error">Файл слишком большой. Максимальный размер: 50MB. Ваш файл: ' +
+                    (file.size / 1024 / 1024).toFixed(2) + 'MB</div>'
+                return
+            }
+
+            if (file.size === 0) {
+                resultDiv.innerHTML = '<div class="error">Файл пустой. Выберите другой файл.</div>'
+                return
+            }
+
+            // Очищаем предыдущий результат
+            resultDiv.innerHTML = ''
+            resultDiv.style.display = 'none'
+
+            // Показываем прогресс-бар
+            progressContainer.classList.add('active')
+            updateProgress(0, 'Подготовка файла...')
+
+            // Читаем файл как base64
+            const reader = new FileReader()
+
+            reader.onprogress = function (e) {
+                if (e.lengthComputable) {
+                    const percent = (e.loaded / e.total) * 50 // Чтение файла - первая половина прогресса
+                    updateProgress(percent, 'Чтение файла... ' +
+                        (e.loaded / 1024).toFixed(1) + ' KB / ' +
+                        (e.total / 1024).toFixed(1) + ' KB')
+                }
+            }
+
+            reader.onload = function (e) {
+                const base64Data = e.target.result.split(',')[1] // Убираем префикс data:...
+                const fileName = file.name
+
+                // Отправляем как JSON
+                const requestData = {
+                    fileName: fileName,
+                    fileData: base64Data
+                }
+
+                // Сериализуем JSON для расчета размера
+                const jsonString = JSON.stringify(requestData)
+                const jsonSize = new Blob([jsonString]).size
+
+                updateProgress(50, 'Файл прочитан, отправка на сервер... (' +
+                    (jsonSize / 1024).toFixed(1) + ' KB)')
+
+                const xhr = new XMLHttpRequest()
+
+                // Отслеживаем реальный прогресс отправки данных
+                let lastLoaded = 0
+                let lastTime = Date.now()
+                let progressInterval = null
+
+                xhr.upload.onprogress = function (e) {
+                    const now = Date.now()
+                    const timeDiff = (now - lastTime) / 1000 // в секундах
+
+                    if (e.lengthComputable && e.total > 0) {
+                        const uploadPercent = (e.loaded / e.total) * 40 // Отправка - 50-90%
+                        const totalPercent = 50 + uploadPercent
+
+                        // Рассчитываем скорость
+                        let speedText = ''
+                        if (timeDiff > 0 && e.loaded > lastLoaded) {
+                            const speed = (e.loaded - lastLoaded) / timeDiff
+                            speedText = ' (' + (speed / 1024).toFixed(1) + ' KB/s)'
+                        }
+
+                        updateProgress(totalPercent, 'Отправка файла на сервер... ' +
+                            (e.loaded / 1024).toFixed(1) + ' KB / ' +
+                            (e.total / 1024).toFixed(1) + ' KB' + speedText)
+
+                        lastLoaded = e.loaded
+                        lastTime = now
+                    } else if (e.loaded > 0) {
+                        // Если total не доступен, показываем хотя бы загруженное
+                        const estimatedPercent = 50 + Math.min((e.loaded / jsonSize) * 40, 40)
+                        let speedText = ''
+                        if (timeDiff > 0 && e.loaded > lastLoaded) {
+                            const speed = (e.loaded - lastLoaded) / timeDiff
+                            speedText = ' (' + (speed / 1024).toFixed(1) + ' KB/s)'
+                        }
+                        updateProgress(estimatedPercent, 'Отправка файла на сервер... ' +
+                            (e.loaded / 1024).toFixed(1) + ' KB' + speedText)
+                        lastLoaded = e.loaded
+                        lastTime = now
+                    }
+                }
+
+                // Fallback: если onprogress не срабатывает, показываем хотя бы что-то
+                xhr.upload.onloadstart = function () {
+                    updateProgress(50, 'Начало отправки файла...')
+                    lastTime = Date.now()
+                }
+
+                xhr.onload = function () {
+                    // Очищаем интервал прогресса если был
+                    if (progressInterval) {
+                        clearInterval(progressInterval)
+                    }
+
+                    updateProgress(90, 'Вычисление хэша на сервере...')
+
+                    if (xhr.status === 200) {
+                        updateProgress(100, 'Готово!')
+                        setTimeout(function () {
+                            progressContainer.classList.remove('active')
+                            resultDiv.style.display = 'block'
+                            resultDiv.innerHTML = xhr.responseText
+                            // Форматируем JSON после загрузки
+                            formatJSON()
+                        }, 300)
+                    } else {
+                        progressContainer.classList.remove('active')
+                        resultDiv.style.display = 'block'
+                        let errorMsg = 'Ошибка сервера: ' + xhr.status + ' ' + xhr.statusText
+                        if (xhr.responseText) {
+                            errorMsg += '<br>Ответ сервера: ' + xhr.responseText.substring(0, 200)
+                        }
+                        resultDiv.innerHTML = '<div class="error">' + errorMsg + '</div>'
+                    }
+                }
+
+                xhr.onerror = function () {
+                    if (progressInterval) {
+                        clearInterval(progressInterval)
+                    }
+                    progressContainer.classList.remove('active')
+                    resultDiv.style.display = 'block'
+                    let errorMsg = 'Ошибка сети при загрузке файла.'
+                    if (xhr.status !== 0) {
+                        errorMsg += ' Статус: ' + xhr.status + ' ' + xhr.statusText
+                    }
+                    errorMsg += '<br>Проверьте консоль браузера (F12) для деталей.'
+                    resultDiv.innerHTML = '<div class="error">' + errorMsg + '</div>'
+                    console.error('XHR error:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        readyState: xhr.readyState,
+                        responseText: xhr.responseText
+                    })
+                }
+
+                xhr.ontimeout = function () {
+                    if (progressInterval) {
+                        clearInterval(progressInterval)
+                    }
+                    progressContainer.classList.remove('active')
+                    resultDiv.style.display = 'block'
+                    resultDiv.innerHTML = '<div class="error">Превышено время ожидания при загрузке файла (60 секунд). Попробуйте файл меньшего размера.</div>'
+                }
+
+                xhr.onabort = function () {
+                    if (progressInterval) {
+                        clearInterval(progressInterval)
+                    }
+                    progressContainer.classList.remove('active')
+                    resultDiv.style.display = 'block'
+                    resultDiv.innerHTML = '<div class="error">Загрузка файла была прервана.</div>'
+                }
+
+                // Устанавливаем таймаут 60 секунд для больших файлов
+                xhr.timeout = 60000
+
+                try {
+                    xhr.open('POST', '/api/demo/file-hash', true)
+                    xhr.setRequestHeader('Content-Type', 'application/json')
+
+                    // Отправляем данные
+                    // Используем Blob для более точного отслеживания прогресса
+                    const blob = new Blob([jsonString], {type: 'application/json'})
+                    xhr.send(blob)
+                } catch (e) {
+                    progressContainer.classList.remove('active')
+                    resultDiv.style.display = 'block'
+                    resultDiv.innerHTML = '<div class="error">Ошибка при отправке запроса: ' + e.message + '</div>'
+                    console.error('Exception:', e)
+                }
+            }
+
+            reader.onerror = function () {
+                progressContainer.classList.remove('active')
+                resultDiv.style.display = 'block'
+                resultDiv.innerHTML = '<div class="error">Ошибка при чтении файла.</div>'
+            }
+
+            // Читаем файл как Data URL (base64)
+            reader.readAsDataURL(file)
+        }
+    })();
+
+    // Функция переключения табов
+    function switchTab(tabName) {
+        // Скрываем все табы
+        document.querySelectorAll('.tab-content').forEach(function (tab) {
+            tab.classList.remove('active')
+        })
+
+        // Убираем активный класс со всех кнопок
+        document.querySelectorAll('.tab-button').forEach(function (button) {
+            button.classList.remove('active')
+        })
+
+        // Показываем выбранный таб
+        const selectedTab = document.getElementById('tab-' + tabName)
+        if (selectedTab) {
+            selectedTab.classList.add('active')
+        }
+
+        // Активируем соответствующую кнопку
+        document.querySelectorAll('.tab-button').forEach(function (button) {
+            if (button.getAttribute('onclick') === "switchTab('" + tabName + "')") {
+                button.classList.add('active')
+            }
+        })
+    }
+
+    // Функция показа toast уведомления
+    function showToast(title, message, type) {
+        type = type || 'success'
+        const container = document.getElementById('toast-container')
+        if (!container) return
+
+        const toast = document.createElement('div')
+        toast.className = 'toast ' + type
+
+        const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : '⚠'
+        toast.innerHTML = `
+                <span class="toast-icon">${icon}</span>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            `
+
+        container.appendChild(toast)
+
+        // Автоматически удаляем через 5 секунд
+        setTimeout(function () {
+            toast.classList.add('fade-out')
+            setTimeout(function () {
+                if (toast.parentElement) {
+                    toast.remove()
+                }
+            }, 300)
+        }, 5000)
+    }
+
+    // Функция обработки ответа от задачи и показа toast
+    function showTaskToast(event) {
+        if (event.detail.xhr && event.detail.xhr.status === 200) {
+            const responseText = event.detail.xhr.responseText
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(responseText, 'text/html')
+
+            // Ищем сообщение об успехе или ошибке
+            const successDiv = doc.querySelector('.success')
+            const errorDiv = doc.querySelector('.error')
+
+            if (errorDiv) {
+                showToast('Ошибка', errorDiv.textContent.trim(), 'error')
+            } else if (successDiv) {
+                const message = successDiv.textContent.trim()
+                // Пытаемся извлечь информацию о задаче
+                const taskInfo = doc.querySelector('p')
+                if (taskInfo) {
+                    showToast('Задача запущена', message, 'success')
+                } else {
+                    showToast('Успешно', message, 'success')
+                }
+            } else {
+                showToast('Успешно', 'Операция выполнена', 'success')
+            }
+
+            // Обновляем таблицу статуса задач
+            setTimeout(function () {
+                const statusButton = document.querySelector('[hx-get="/api/demo/tasks/status"]')
+                if (statusButton) {
+                    statusButton.click()
+                }
+            }, 500)
+        } else if (event.detail.xhr && event.detail.xhr.status !== 200) {
+            showToast('Ошибка', 'Не удалось выполнить операцию', 'error')
+        }
+    }
+
+    // Функция обработки остановки задачи
+    function handleTaskStop(event, taskID) {
+        if (event.detail.xhr && event.detail.xhr.status === 200) {
+            const responseText = event.detail.xhr.responseText
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(responseText, 'text/html')
+
+            const successDiv = doc.querySelector('.success')
+            const errorDiv = doc.querySelector('.error')
+
+            if (errorDiv) {
+                showToast('Ошибка', errorDiv.textContent.trim(), 'error')
+            } else if (successDiv) {
+                showToast('Задача остановлена', 'Задача ' + taskID + ' успешно остановлена', 'success')
+            }
+
+            // Обновляем таблицу статуса задач
+            setTimeout(function () {
+                const statusButton = document.querySelector('[hx-get="/api/demo/tasks/status"]')
+                if (statusButton) {
+                    statusButton.click()
+                }
+            }, 500)
+        } else {
+            showToast('Ошибка', 'Не удалось остановить задачу', 'error')
+        }
+    }
+
+    // Функция обработки остановки всех задач
+    function handleStopAllTasks(event) {
+        if (event.detail.xhr && event.detail.xhr.status === 200) {
+            const responseText = event.detail.xhr.responseText
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(responseText, 'text/html')
+
+            const messageDiv = doc.querySelector('div[style*="background: #e8f5e9"]')
+            const errorDiv = doc.querySelector('.error')
+
+            if (errorDiv) {
+                showToast('Ошибка', errorDiv.textContent.trim(), 'error')
+            } else if (messageDiv) {
+                showToast('Все задачи остановлены', messageDiv.textContent.trim(), 'success')
+            } else {
+                showToast('Успешно', 'Все задачи остановлены', 'success')
+            }
+
+            // Обновляем таблицу статуса задач
+            setTimeout(function () {
+                const statusButton = document.querySelector('[hx-get="/api/demo/tasks/status"]')
+                if (statusButton) {
+                    statusButton.click()
+                }
+            }, 500)
+        } else {
+            showToast('Ошибка', 'Не удалось остановить задачи', 'error')
+        }
+    }
+</script>
+</body>
+
+</html>
