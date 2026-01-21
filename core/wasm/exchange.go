@@ -5,7 +5,7 @@
 package wasm
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 
 	"tgp/core/data"
 )

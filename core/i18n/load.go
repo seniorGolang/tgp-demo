@@ -2,35 +2,50 @@
 package i18n
 
 import (
-	"embed"
 	"fmt"
-	"path/filepath"
+	"io/fs"
+	"strings"
 
 	"github.com/goccy/go-json"
+
+	"tgp/i18n"
 )
 
-//go:embed lang/*.json
-var translationsFS embed.FS
 var translations map[string]string
 
 func init() {
 	translations = make(map[string]string)
-	lang := GetLang()
-	if lang == langCodeEN {
+	langCode := GetLang()
+	if langCode == langCodeEN {
 		return
 	}
-	langPath := filepath.Join(langDir, fmt.Sprintf("%s.json", lang))
-	var langData []byte
-	var err error
-	langData, err = translationsFS.ReadFile(langPath)
+
+	langFilePattern := fmt.Sprintf("%s.json", langCode)
+	err := fs.WalkDir(i18n.TranslationsFS, ".", func(path string, d fs.DirEntry, err error) (walkErr error) {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(path, langFilePattern) {
+			return nil
+		}
+		var langData []byte
+		langData, walkErr = i18n.TranslationsFS.ReadFile(path)
+		if walkErr != nil {
+			return walkErr
+		}
+		var langTranslations map[string]string
+		if walkErr = json.Unmarshal(langData, &langTranslations); walkErr != nil {
+			return walkErr
+		}
+		for key, value := range langTranslations {
+			translations[key] = value
+		}
+		return nil
+	})
 	if err != nil {
 		return
-	}
-	var langTranslations map[string]string
-	if err = json.Unmarshal(langData, &langTranslations); err != nil {
-		return
-	}
-	for key, value := range langTranslations {
-		translations[key] = value
 	}
 }

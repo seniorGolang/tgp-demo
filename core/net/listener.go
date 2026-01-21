@@ -10,6 +10,7 @@ import (
 	"net"
 	"sync"
 
+	"tgp/core/i18n"
 	"tgp/core/wasm"
 )
 
@@ -41,7 +42,7 @@ func Listen(network, address string) (listener *Listener, err error) {
 	// Выделяем память для listenerID (4 байта для uint32)
 	listenerIDPtr := wasm.Malloc(4)
 	if listenerIDPtr == 0 {
-		return nil, fmt.Errorf("failed to allocate memory for listenerID")
+		return nil, fmt.Errorf(i18n.Msg("failed to allocate memory for listenerID"))
 	}
 	defer wasm.Free(listenerIDPtr)
 
@@ -56,7 +57,7 @@ func Listen(network, address string) (listener *Listener, err error) {
 	// Читаем listenerID из памяти (little-endian uint32)
 	listenerIDBytes := wasm.PtrToByte(listenerIDPtr, 4)
 	if len(listenerIDBytes) < 4 {
-		return nil, fmt.Errorf("invalid listenerID data size: expected 4, got %d", len(listenerIDBytes))
+		return nil, fmt.Errorf(i18n.Msg("invalid listenerID data size: expected 4, got %d"), len(listenerIDBytes))
 	}
 
 	listenerID := binary.LittleEndian.Uint32(listenerIDBytes)
@@ -154,14 +155,14 @@ func (l *Listener) Accept() (conn net.Conn, err error) {
 	l.mu.Lock()
 	if l.closed {
 		l.mu.Unlock()
-		return nil, fmt.Errorf("listener is closed")
+		return nil, fmt.Errorf(i18n.Msg("listener is closed"))
 	}
 	l.mu.Unlock()
 
 	// Выделяем память для connID (4 байта для uint32)
 	connIDPtr := wasm.Malloc(4)
 	if connIDPtr == 0 {
-		return nil, fmt.Errorf("failed to allocate memory for connID")
+		return nil, fmt.Errorf(i18n.Msg("failed to allocate memory for connID"))
 	}
 	defer wasm.Free(connIDPtr)
 
@@ -170,14 +171,14 @@ func (l *Listener) Accept() (conn net.Conn, err error) {
 
 	// Обрабатываем ошибку
 	if err = wasm.HandleHostError(ret); err != nil {
-		slog.Error("Listener.Accept: listener_accept failed", "listenerID", l.id, "error", err)
+		slog.Error(i18n.Msg("Listener.Accept: listener_accept failed"), slog.Uint64("listenerID", l.id), slog.String("error", err.Error()))
 		return nil, err
 	}
 
 	// Читаем connID из памяти (little-endian uint32)
 	connIDBytes := wasm.PtrToByte(connIDPtr, 4)
 	if len(connIDBytes) < 4 {
-		return nil, fmt.Errorf("invalid connID data size: expected 4, got %d", len(connIDBytes))
+		return nil, fmt.Errorf(i18n.Msg("invalid connID data size: expected 4, got %d"), len(connIDBytes))
 	}
 
 	connID := binary.LittleEndian.Uint32(connIDBytes)
@@ -197,7 +198,7 @@ func (l *Listener) Serve(callbackName string) (err error) {
 	l.mu.Lock()
 	if l.serving {
 		l.mu.Unlock()
-		return fmt.Errorf("listener is already serving")
+		return fmt.Errorf(i18n.Msg("listener is already serving"))
 	}
 	l.serving = true
 	l.mu.Unlock()
@@ -211,7 +212,7 @@ func (l *Listener) Serve(callbackName string) (err error) {
 
 	// Обрабатываем ошибку
 	if err = wasm.HandleHostError(ret); err != nil {
-		slog.Error("Listener.Serve: listener_serve_start failed", "listenerID", l.id, "error", err)
+		slog.Error(i18n.Msg("Listener.Serve: listener_serve_start failed"), slog.Uint64("listenerID", l.id), slog.String("error", err.Error()))
 		l.mu.Lock()
 		l.serving = false
 		l.mu.Unlock()

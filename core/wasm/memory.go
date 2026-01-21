@@ -5,9 +5,12 @@
 package wasm
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"unsafe"
+
+	"tgp/core/i18n"
 )
 
 // Управление памятью для WASM плагина.
@@ -149,7 +152,7 @@ func retUint64ToError(u64 uint64) (err error) {
 	// Извлекаем ptr и length из uint64 (старшие 32 бита - ptr, младшие 32 бита - length)
 	ptrValue := u64 >> 32
 	if ptrValue > uint64(^uint32(0)) {
-		return fmt.Errorf("pointer value too large: %d", ptrValue)
+		return fmt.Errorf(i18n.Msg("pointer value too large: %d"), ptrValue)
 	}
 	//nolint:gosec // Проверка на переполнение выполнена выше
 	ptr := uint32(ptrValue)
@@ -159,7 +162,7 @@ func retUint64ToError(u64 uint64) (err error) {
 	if length&(1<<31) != 0 {
 		length ^= 1 << 31 // Убираем флаг ошибки
 		errMsg := ptrToString(ptr, length)
-		return fmt.Errorf("%s", errMsg)
+		return errors.New(errMsg)
 	}
 	return nil
 }

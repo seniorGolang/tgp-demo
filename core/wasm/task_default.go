@@ -7,6 +7,8 @@ package wasm
 import (
 	"errors"
 	"time"
+
+	"tgp/core/i18n"
 )
 
 // TaskHandler представляет функцию-обработчик задачи.
@@ -17,7 +19,7 @@ type TaskHandler func() (next bool)
 // Для не-WASM сборок возвращает ошибку.
 func StartTask(interval time.Duration, handler TaskHandler) (taskID uint32, err error) {
 
-	return 0, errors.New("tasks are only available in WASM builds")
+	return 0, errors.New(i18n.Msg("tasks are only available in WASM builds"))
 }
 
 // StopTask останавливает задачу по taskID.

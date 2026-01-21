@@ -6,6 +6,7 @@ package net
 import (
 	"fmt"
 
+	"tgp/core/i18n"
 	"tgp/core/wasm"
 )
 
@@ -17,7 +18,7 @@ func CloseListenerByID(listenerID uint64) (err error) {
 
 	// Обрабатываем ошибку
 	if err = wasm.HandleHostError(ret); err != nil {
-		return fmt.Errorf("failed to close listener %d: %w", listenerID, err)
+		return fmt.Errorf(i18n.Msg("failed to close listener %d")+": %w", listenerID, err)
 	}
 
 	return nil

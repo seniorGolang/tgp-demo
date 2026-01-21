@@ -6,11 +6,13 @@ import (
 	"fmt"
 
 	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 )
 
 var (
 	// ErrNotFound возвращается, когда ключ не найден в хранилище.
-	ErrNotFound = errors.New("key not found")
+	ErrNotFound = errors.New(i18n.Msg("key not found"))
 )
 
 // Storage определяет интерфейс хранилища для запросов и ответов плагинов.
@@ -52,11 +54,11 @@ func (s MapStorage) GetRaw(name string) (value json.RawMessage, ok bool) {
 func (s MapStorage) Set(name string, value any) (err error) {
 
 	if s == nil {
-		return errors.New("storage is nil")
+		return errors.New(i18n.Msg("storage is nil"))
 	}
 	data, err := json.Marshal(value)
 	if err != nil {
-		return fmt.Errorf("failed to marshal value for key %q: %w", name, err)
+		return fmt.Errorf(i18n.Msg("failed to marshal value for key %q")+": %w", name, err)
 	}
 	s[name] = json.RawMessage(data)
 	return
@@ -80,10 +82,10 @@ func Get[T any](store Storage, key string) (value T, err error) {
 	}
 	raw, ok := store.GetRaw(key)
 	if !ok {
-		return value, fmt.Errorf("key %q: %w", key, ErrNotFound)
+		return value, fmt.Errorf(i18n.Msg("key %q")+": %w", key, ErrNotFound)
 	}
 	if err = json.Unmarshal(raw, &value); err != nil {
-		return value, fmt.Errorf("failed to unmarshal value for key %q: %w", key, err)
+		return value, fmt.Errorf(i18n.Msg("failed to unmarshal value for key %q")+": %w", key, err)
 	}
 	return
 }

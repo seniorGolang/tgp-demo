@@ -6,12 +6,14 @@ package wasm
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
+
 	"tgp/core/data"
+	"tgp/core/i18n"
 )
 
 // TaskHandler представляет функцию-обработчик задачи.
@@ -58,7 +60,7 @@ func getTaskHandler(handlerID uint32) (handler TaskHandler, ok bool) {
 func StartTask(interval time.Duration, handler TaskHandler) (taskID uint32, err error) {
 
 	if handler == nil {
-		return 0, fmt.Errorf("handler cannot be nil")
+		return 0, fmt.Errorf(i18n.Msg("handler cannot be nil"))
 	}
 
 	// Регистрируем обработчик и получаем handlerID
@@ -67,7 +69,7 @@ func StartTask(interval time.Duration, handler TaskHandler) (taskID uint32, err 
 	// Проверяем переполнение при преобразовании int64 -> uint32
 	intervalMsInt64 := interval.Milliseconds()
 	if intervalMsInt64 < 0 || intervalMsInt64 > int64(^uint32(0)) {
-		return 0, fmt.Errorf("interval too large for uint32: %d ms", intervalMsInt64)
+		return 0, fmt.Errorf(i18n.Msg("interval too large for uint32: %d ms"), intervalMsInt64)
 	}
 	intervalMs := uint32(intervalMsInt64) //nolint:gosec // Проверка переполнения выполнена выше
 	return startTask(intervalMs, handlerID)
@@ -87,7 +89,7 @@ func startTask(intervalMs uint32, handlerID uint32) (taskID uint32, err error) {
 
 	// Вызываем функцию хоста напрямую
 	if hostStartTask(intervalMs, handlerID, resultPtrPtr, resultSizePtr) != 0 {
-		return 0, fmt.Errorf("failed to start task")
+		return 0, fmt.Errorf(i18n.Msg("failed to start task"))
 	}
 
 	// Читаем результат
@@ -95,7 +97,7 @@ func startTask(intervalMs uint32, handlerID uint32) (taskID uint32, err error) {
 	resultSize := ReadUint32(resultSizePtr)
 
 	if resultSize == 0 {
-		return 0, fmt.Errorf("empty response from host")
+		return 0, fmt.Errorf(i18n.Msg("empty response from host"))
 	}
 
 	// Читаем результат (в JSON формате)
@@ -105,12 +107,12 @@ func startTask(intervalMs uint32, handlerID uint32) (taskID uint32, err error) {
 	// Декодируем JSON ответ
 	var response taskResponse
 	if err = json.Unmarshal(resultBytes, &response); err != nil {
-		return 0, fmt.Errorf("failed to decode response: %w", err)
+		return 0, fmt.Errorf(i18n.Msg("failed to decode response")+": %w", err)
 	}
 
 	// Проверяем наличие ошибки
 	if response.Error != "" {
-		return 0, fmt.Errorf("task error: %s", response.Error)
+		return 0, fmt.Errorf(i18n.Msg("task error: %s"), response.Error)
 	}
 
 	// Десериализуем Response в MapStorage
@@ -119,7 +121,7 @@ func startTask(intervalMs uint32, handlerID uint32) (taskID uint32, err error) {
 		var responseStorage data.MapStorage
 		if err = json.Unmarshal(response.Response, &responseStorage); err == nil {
 			if parsedTaskID, err = data.Get[uint32](&responseStorage, "taskID"); err != nil {
-				return 0, fmt.Errorf("failed to get taskID from response: %w", err)
+				return 0, fmt.Errorf(i18n.Msg("failed to get taskID from response")+": %w", err)
 			}
 		}
 	}
@@ -146,7 +148,7 @@ func StopTask(taskID uint32) (err error) {
 
 	// Вызываем функцию хоста напрямую
 	if hostStopTask(taskIDPtr, resultPtrPtr, resultSizePtr) != 0 {
-		return fmt.Errorf("failed to stop task")
+		return fmt.Errorf(i18n.Msg("failed to stop task"))
 	}
 
 	// Читаем результат
@@ -154,7 +156,7 @@ func StopTask(taskID uint32) (err error) {
 	resultSize := ReadUint32(resultSizePtr)
 
 	if resultSize == 0 {
-		return fmt.Errorf("empty response from host")
+		return fmt.Errorf(i18n.Msg("empty response from host"))
 	}
 
 	// Читаем результат (в JSON формате)
@@ -167,14 +169,14 @@ func StopTask(taskID uint32) (err error) {
 		Response json.RawMessage `json:"response,omitempty"`
 	}
 	if err = json.Unmarshal(resultBytes, &response); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
+		return fmt.Errorf(i18n.Msg("failed to decode response")+": %w", err)
 	}
 
 	// Проверяем наличие ошибки
 	if response.Error != "" {
 		// Удаляем задачу из списка активных даже при ошибке
 		unregisterActiveTask(taskID)
-		return fmt.Errorf("task error: %s", response.Error)
+		return fmt.Errorf(i18n.Msg("task error: %s"), response.Error)
 	}
 
 	// Удаляем задачу из списка активных
@@ -200,7 +202,7 @@ func StopAll() (err error) {
 
 	// Вызываем функцию хоста напрямую
 	if hostStopAllTasks(resultPtrPtr, resultSizePtr) != 0 {
-		return fmt.Errorf("failed to stop all tasks")
+		return fmt.Errorf(i18n.Msg("failed to stop all tasks"))
 	}
 
 	// Читаем результат
@@ -208,7 +210,7 @@ func StopAll() (err error) {
 	resultSize := ReadUint32(resultSizePtr)
 
 	if resultSize == 0 {
-		return fmt.Errorf("empty response from host")
+		return fmt.Errorf(i18n.Msg("empty response from host"))
 	}
 
 	// Читаем результат (в JSON формате)
@@ -221,12 +223,12 @@ func StopAll() (err error) {
 		Response json.RawMessage `json:"response,omitempty"`
 	}
 	if err = json.Unmarshal(resultBytes, &response); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
+		return fmt.Errorf(i18n.Msg("failed to decode response")+": %w", err)
 	}
 
 	// Проверяем наличие ошибки
 	if response.Error != "" {
-		return fmt.Errorf("task error: %s", response.Error)
+		return fmt.Errorf(i18n.Msg("task error: %s"), response.Error)
 	}
 
 	// Очищаем список активных задач

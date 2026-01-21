@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 )
 
 // hostExecuteCommand вызывает host_execute_command из модуля command.
@@ -38,7 +40,7 @@ func ExecuteCommandInDir(command string, args []string, workDir string) (respons
 	// Кодируем args в JSON
 	argsJSONBytes, err := json.Marshal(args)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode args: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to encode args")+": %w", err)
 	}
 
 	// Выделяем память для строк
@@ -59,7 +61,7 @@ func ExecuteCommandInDir(command string, args []string, workDir string) (respons
 
 	// Вызываем функцию хоста
 	if hostExecuteCommand(commandPtr, commandLen, argsPtr, argsLen, workDirPtr, workDirLen, resultPtrPtr, resultSizePtr) != 0 {
-		return nil, fmt.Errorf("failed to execute command")
+		return nil, fmt.Errorf(i18n.Msg("failed to execute command"))
 	}
 
 	// Читаем указатель и размер результата
@@ -67,7 +69,7 @@ func ExecuteCommandInDir(command string, args []string, workDir string) (respons
 	resultSize := binary.LittleEndian.Uint32(PtrToByte(resultSizePtr, 4))
 
 	if resultSize == 0 {
-		return nil, fmt.Errorf("empty response from host")
+		return nil, fmt.Errorf(i18n.Msg("empty response from host"))
 	}
 
 	// Читаем результат
@@ -77,16 +79,16 @@ func ExecuteCommandInDir(command string, args []string, workDir string) (respons
 	// Декодируем JSON напрямую в CommandResponse
 	response = &CommandResponse{}
 	if err := json.Unmarshal(resultBytes, response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to decode response")+": %w", err)
 	}
 
 	// Проверяем валидность streamID (должны быть > 0)
 	if response.StdoutStreamID < 0 {
-		return nil, fmt.Errorf("invalid stdout stream ID: negative value %d", response.StdoutStreamID)
+		return nil, fmt.Errorf(i18n.Msg("invalid stdout stream ID: negative value %d"), response.StdoutStreamID)
 	}
 
 	if response.StderrStreamID < 0 {
-		return nil, fmt.Errorf("invalid stderr stream ID: negative value %d", response.StderrStreamID)
+		return nil, fmt.Errorf(i18n.Msg("invalid stderr stream ID: negative value %d"), response.StderrStreamID)
 	}
 
 	return response, nil
@@ -118,14 +120,14 @@ func (r *StreamReader) Read(p []byte) (n int, err error) {
 	// Получаем bufferPtr из streamID
 	bufferPtr, err := getStreamReadBufferPtr(r.streamID)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get buffer ptr: %w", err)
+		return 0, fmt.Errorf(i18n.Msg("failed to get buffer ptr")+": %w", err)
 	}
 
 	// Кэшируем DataSize при первом использовании
 	if !r.bufferDataSizeSet {
 		var header RingBufferHeader
 		if header, err = ReadRingBufferHeader(bufferPtr); err != nil {
-			return 0, fmt.Errorf("failed to read header for data size: %w", err)
+			return 0, fmt.Errorf(i18n.Msg("failed to read header for data size")+": %w", err)
 		}
 		r.bufferDataSize = header.DataSize
 		r.bufferDataSizeSet = true
@@ -148,7 +150,7 @@ func (r *StreamReader) Read(p []byte) (n int, err error) {
 		// Читаем только флаг Closed (4 байта вместо всего заголовка)
 		var closed uint32
 		if closed, err = ReadClosedFlag(bufferPtr); err != nil {
-			return false, 0, fmt.Errorf("failed to read closed flag: %w", err)
+			return false, 0, fmt.Errorf(i18n.Msg("failed to read closed flag")+": %w", err)
 		}
 
 		if closed != 0 {
@@ -168,7 +170,7 @@ func getStreamReadBufferPtr(streamID uint32) (bufferPtr uint32, err error) {
 	// Выделяем память для bufferPtr (4 байта для uint32)
 	bufferPtrPtr := Malloc(4)
 	if bufferPtrPtr == 0 {
-		return 0, fmt.Errorf("failed to allocate memory for bufferPtr")
+		return 0, fmt.Errorf(i18n.Msg("failed to allocate memory for bufferPtr"))
 	}
 	defer Free(bufferPtrPtr)
 
@@ -180,7 +182,7 @@ func getStreamReadBufferPtr(streamID uint32) (bufferPtr uint32, err error) {
 			// Читаем bufferPtr из памяти (little-endian uint32)
 			bufferPtrData := PtrToByte(bufferPtrPtr, 4)
 			if len(bufferPtrData) < 4 {
-				return 0, fmt.Errorf("invalid bufferPtr data size")
+				return 0, fmt.Errorf(i18n.Msg("invalid bufferPtr data size"))
 			}
 
 			bufferPtr = binary.LittleEndian.Uint32(bufferPtrData)
@@ -196,7 +198,7 @@ func getStreamReadBufferPtr(streamID uint32) (bufferPtr uint32, err error) {
 		}
 	}
 
-	return 0, fmt.Errorf("failed to get stream read buffer ptr after %d retries", maxRetries)
+	return 0, fmt.Errorf(i18n.Msg("failed to get stream read buffer ptr after %d retries"), maxRetries)
 }
 
 // Close закрывает поток.
@@ -220,7 +222,7 @@ func GetCommandResponse(streamID uint32) (response *CommandResponse, err error) 
 
 	// Вызываем host функцию
 	if hostGetCommandResponse(streamID, resultPtrPtr, resultSizePtr) != 0 {
-		return nil, fmt.Errorf("failed to get command response")
+		return nil, fmt.Errorf(i18n.Msg("failed to get command response"))
 	}
 
 	// Читаем указатель и размер результата
@@ -228,7 +230,7 @@ func GetCommandResponse(streamID uint32) (response *CommandResponse, err error) 
 	resultSize := binary.LittleEndian.Uint32(PtrToByte(resultSizePtr, 4))
 
 	if resultSize == 0 {
-		return nil, fmt.Errorf("empty response from host")
+		return nil, fmt.Errorf(i18n.Msg("empty response from host"))
 	}
 
 	// Читаем результат
@@ -238,7 +240,7 @@ func GetCommandResponse(streamID uint32) (response *CommandResponse, err error) 
 	// Декодируем JSON напрямую в CommandResponse
 	response = &CommandResponse{}
 	if err := json.Unmarshal(resultBytes, response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to decode response")+": %w", err)
 	}
 
 	return response, nil

@@ -8,12 +8,13 @@ import "net/http"
 // ListenAndServe запускает HTTP сервер на указанном адресе.
 // Неблокирующая функция - возвращает управление сразу после запуска.
 // В не-WASM окружении использует стандартный net/http в отдельной горутине.
-func ListenAndServe(addr string, handler http.Handler) (err error) {
+// Возвращает serverID = 0 для совместимости с WASM версией.
+func ListenAndServe(addr string, handler http.Handler) (serverID uint64, err error) {
 
 	// Запускаем сервер в отдельной горутине (неблокирующая)
 	go func() {
 		_ = http.ListenAndServe(addr, handler)
 	}()
 
-	return nil
+	return 0, nil
 }

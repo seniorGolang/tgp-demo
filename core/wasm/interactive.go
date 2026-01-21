@@ -4,11 +4,15 @@
 
 package wasm
 
-import "errors"
+import (
+	"errors"
+
+	"tgp/core/i18n"
+)
 
 // InteractiveSelect выполняет интерактивный выбор опции через хост.
 // Заглушка для не-WASM сборок.
 func InteractiveSelect(prompt string, options []string, multiSelect bool, defaultOptions []string) (selected []string, err error) {
 
-	return nil, errors.New("interactive select is only available in WASM builds")
+	return nil, errors.New(i18n.Msg("interactive select is only available in WASM builds"))
 }

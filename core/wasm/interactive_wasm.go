@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 )
 
 // hostInteractiveSelect вызывает функцию хоста для интерактивного выбора.
@@ -27,7 +29,7 @@ func InteractiveSelect(prompt string, options []string, multiSelect bool, defaul
 	// Кодируем options в JSON
 	optionsJSONBytes, err := json.Marshal(options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode options: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to encode options")+": %w", err)
 	}
 
 	// Кодируем config в JSON
@@ -39,7 +41,7 @@ func InteractiveSelect(prompt string, options []string, multiSelect bool, defaul
 	}
 	configJSONBytes, err := json.Marshal(configJSON)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode config: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to encode config")+": %w", err)
 	}
 
 	// Выделяем память для строк
@@ -60,7 +62,7 @@ func InteractiveSelect(prompt string, options []string, multiSelect bool, defaul
 
 	// Вызываем функцию хоста
 	if hostInteractiveSelect(promptPtr, promptLen, optionsPtr, optionsLen, configPtr, configLen, resultPtrPtr, resultSizePtr) != 0 {
-		return nil, fmt.Errorf("failed to execute interactive select")
+		return nil, fmt.Errorf(i18n.Msg("failed to execute interactive select"))
 	}
 
 	// Читаем указатель и размер результата
@@ -68,7 +70,7 @@ func InteractiveSelect(prompt string, options []string, multiSelect bool, defaul
 	resultSize := ReadUint32(resultSizePtr)
 
 	if resultSize == 0 {
-		return nil, fmt.Errorf("empty response from host")
+		return nil, fmt.Errorf(i18n.Msg("empty response from host"))
 	}
 
 	// Читаем результат
@@ -78,7 +80,7 @@ func InteractiveSelect(prompt string, options []string, multiSelect bool, defaul
 	// Декодируем ответ из JSON
 	var respJSON interactiveSelectResponse
 	if err := json.Unmarshal(resultBytes, &respJSON); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to decode response")+": %w", err)
 	}
 
 	if respJSON.Selected != nil {
@@ -91,7 +93,7 @@ func InteractiveSelect(prompt string, options []string, multiSelect bool, defaul
 		return result, nil
 	}
 
-	return nil, fmt.Errorf("invalid response format")
+	return nil, fmt.Errorf(i18n.Msg("invalid response format"))
 }
 
 // ReadUint32 читает uint32 из памяти WASM модуля (little-endian, 4 байта).

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"tgp/core/i18n"
 	"tgp/core/plugin"
 )
 
@@ -12,11 +13,11 @@ import (
 // Читает путь из os.Args[1] и вызывает GenerateManifest с переданным plugin instance.
 func GenerateFromArgs(pluginInstance plugin.Plugin) {
 	if len(os.Args) < 2 {
-		slog.Error("output path is required")
+		slog.Error(i18n.Msg("output path is required"))
 		return
 	}
 	outputPath := os.Args[1]
 	if err := GenerateManifest(pluginInstance, outputPath); err != nil {
-		slog.Error("failed to generate manifest", slog.String("error", err.Error()))
+		slog.Error(i18n.Msg("failed to generate manifest"), slog.String("error", err.Error()))
 	}
 }

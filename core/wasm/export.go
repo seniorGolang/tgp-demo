@@ -5,8 +5,11 @@
 package wasm
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 )
 
 // exportWrapper создает стандартную обертку для экспорта функции.
@@ -24,7 +27,7 @@ func exportWrapper[TRequest any, TResult any](handler func(request TRequest) (re
 		if len(requestBytes) > 0 {
 			if err := json.Unmarshal(requestBytes, &request); err != nil {
 				errorBytes, _ := json.Marshal(map[string]string{
-					"error": fmt.Sprintf("failed to unmarshal request: %v", err),
+					"error": fmt.Sprintf(i18n.Msg("failed to unmarshal request")+": %v", err),
 				})
 				return createErrorResultFromBytes(errorBytes)
 			}
@@ -43,7 +46,7 @@ func exportWrapper[TRequest any, TResult any](handler func(request TRequest) (re
 		responseBytes, marshalErr := json.Marshal(response)
 		if marshalErr != nil {
 			errorBytes, _ := json.Marshal(map[string]string{
-				"error": fmt.Sprintf("failed to marshal response: %v", marshalErr),
+				"error": fmt.Sprintf(i18n.Msg("failed to marshal response")+": %v", marshalErr),
 			})
 			return createErrorResultFromBytes(errorBytes)
 		}
@@ -52,7 +55,7 @@ func exportWrapper[TRequest any, TResult any](handler func(request TRequest) (re
 		resultPtr, resultSize := byteToPtr(responseBytes)
 		if resultPtr == 0 {
 			errorBytes, _ := json.Marshal(map[string]string{
-				"error": "failed to allocate memory for result",
+				"error": i18n.Msg("failed to allocate memory for result"),
 			})
 			return createErrorResultFromBytes(errorBytes)
 		}
@@ -84,7 +87,7 @@ func exportWrapperSimple[TResult any](handler func() (result TResult, err error)
 		responseBytes, marshalErr := json.Marshal(response)
 		if marshalErr != nil {
 			errorBytes, _ := json.Marshal(map[string]string{
-				"error": fmt.Sprintf("failed to marshal response: %v", marshalErr),
+				"error": fmt.Sprintf(i18n.Msg("failed to marshal response")+": %v", marshalErr),
 			})
 			return createErrorResultFromBytes(errorBytes)
 		}
@@ -93,7 +96,7 @@ func exportWrapperSimple[TResult any](handler func() (result TResult, err error)
 		resultPtr, resultSize := byteToPtr(responseBytes)
 		if resultPtr == 0 {
 			errorBytes, _ := json.Marshal(map[string]string{
-				"error": "failed to allocate memory for result",
+				"error": i18n.Msg("failed to allocate memory for result"),
 			})
 			return createErrorResultFromBytes(errorBytes)
 		}

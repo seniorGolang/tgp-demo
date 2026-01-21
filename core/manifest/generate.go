@@ -2,18 +2,21 @@
 package manifest
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 	"tgp/core/plugin"
 )
 
 // GenerateManifest генерирует plugin.json файл из plugin.Info.
 func GenerateManifest(pluginInstance plugin.Plugin, outputPath string) (err error) {
-	info, err := pluginInstance.Info()
-	if err != nil {
-		return fmt.Errorf("failed to get plugin info: %w", err)
+
+	var info plugin.Info
+	if info, err = pluginInstance.Info(); err != nil {
+		return fmt.Errorf(i18n.Msg("failed to get plugin info")+": %w", err)
 	}
 	manifest := Manifest{
 		Name:         info.Name,
@@ -22,13 +25,13 @@ func GenerateManifest(pluginInstance plugin.Plugin, outputPath string) (err erro
 		License:      info.License,
 		Dependencies: info.Dependencies,
 	}
-	manifestJSON, err := json.MarshalIndent(manifest, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal manifest: %w", err)
+	var manifestJSON []byte
+	if manifestJSON, err = json.MarshalIndent(manifest, "", "  "); err != nil {
+		return fmt.Errorf(i18n.Msg("failed to marshal manifest")+": %w", err)
 	}
 	manifestJSON = append(manifestJSON, '\n')
 	if err = os.WriteFile(outputPath, manifestJSON, 0600); err != nil {
-		return fmt.Errorf("failed to write manifest file: %w", err)
+		return fmt.Errorf(i18n.Msg("failed to write manifest file")+": %w", err)
 	}
-	return nil
+	return
 }

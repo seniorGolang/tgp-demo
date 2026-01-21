@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"tgp/core/i18n"
 	"tgp/core/wasm"
 )
 
@@ -47,7 +48,7 @@ func handleNewConnection(listenerID, connID uint64) {
 	connectionHandlerMu.RUnlock()
 
 	if !ok || handler == nil {
-		slog.Error("handleNewConnection: no connection handler found for listener", "listenerID", listenerID, "connID", connID)
+		slog.Error(i18n.Msg("handleNewConnection: no connection handler found for listener"), slog.Uint64("listenerID", listenerID), slog.Uint64("connID", connID))
 		return
 	}
 

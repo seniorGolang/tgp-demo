@@ -9,6 +9,7 @@ import (
 	"io"
 	"time"
 
+	"tgp/core/i18n"
 	"tgp/core/wasm"
 )
 
@@ -63,13 +64,13 @@ func (c *Cmd) Dir(dir string) (cmd *Cmd) {
 func (c *Cmd) Start() (err error) {
 
 	if c.started {
-		return fmt.Errorf("command already started")
+		return fmt.Errorf(i18n.Msg("command already started"))
 	}
 
 	// Выполняем команду через WASM (внутренняя сложность скрыта)
 	cmdResp, cmdErr := wasm.ExecuteCommandInDir(c.Path, c.Args, c.WorkDir)
 	if cmdErr != nil {
-		return fmt.Errorf("failed to execute command: %w", cmdErr)
+		return fmt.Errorf(i18n.Msg("failed to execute command")+": %w", cmdErr)
 	}
 
 	c.cmdResp = cmdResp
@@ -82,15 +83,15 @@ func (c *Cmd) Start() (err error) {
 func (c *Cmd) Wait() (err error) {
 
 	if !c.started {
-		return fmt.Errorf("command not started")
+		return fmt.Errorf(i18n.Msg("command not started"))
 	}
 
 	if c.cmdResp == nil {
-		return fmt.Errorf("command response is nil")
+		return fmt.Errorf(i18n.Msg("command response is nil"))
 	}
 
 	if c.cmdResp.Error != "" {
-		return fmt.Errorf("command failed: %s", c.cmdResp.Error)
+		return fmt.Errorf(i18n.Msg("command failed: %s"), c.cmdResp.Error)
 	}
 
 	// Пытаемся получить обновленный CommandResponse из хоста с несколькими попытками
@@ -118,7 +119,7 @@ func (c *Cmd) Wait() (err error) {
 	}
 
 	if c.cmdResp.ExitCode != 0 {
-		return fmt.Errorf("command exited with code %d", c.cmdResp.ExitCode)
+		return fmt.Errorf(i18n.Msg("command exited with code %d"), c.cmdResp.ExitCode)
 	}
 
 	return nil
@@ -143,11 +144,11 @@ func (c *Cmd) StdoutPipe() (reader io.ReadCloser, err error) {
 	// StdoutPipe только возвращает reader, команда должна быть запущена отдельно
 
 	if c.cmdResp == nil {
-		return nil, fmt.Errorf("command not started: call Start() first")
+		return nil, fmt.Errorf(i18n.Msg("command not started: call Start() first"))
 	}
 
 	if c.cmdResp.StdoutStreamID == 0 {
-		return nil, fmt.Errorf("stdout stream not available")
+		return nil, fmt.Errorf(i18n.Msg("stdout stream not available"))
 	}
 
 	// Создаем reader для чтения из потока
@@ -165,11 +166,11 @@ func (c *Cmd) StderrPipe() (reader io.ReadCloser, err error) {
 	// StderrPipe только возвращает reader, команда должна быть запущена отдельно
 
 	if c.cmdResp == nil {
-		return nil, fmt.Errorf("command not started: call Start() first")
+		return nil, fmt.Errorf(i18n.Msg("command not started: call Start() first"))
 	}
 
 	if c.cmdResp.StderrStreamID == 0 {
-		return nil, fmt.Errorf("stderr stream not available")
+		return nil, fmt.Errorf(i18n.Msg("stderr stream not available"))
 	}
 
 	// Создаем reader для чтения из потока

@@ -49,14 +49,14 @@ func (s *Server) Start(addr string) (err error) {
 
 	slog.Info("starting demo server", slog.String("addr", addr))
 
-	var listenerID uint64
-	if listenerID, err = http.ListenerServeStart(addr, mux); err != nil {
+	var serverID uint64
+	if serverID, err = http.ListenAndServe(addr, mux); err != nil {
 		slog.Error("failed to start demo server", slog.String("addr", addr), slog.Any("error", err))
-		return err
+		return
 	}
 
-	s.listenerID = listenerID
+	s.serverID = serverID
 
-	slog.Info("demo server started successfully", slog.String("addr", addr), slog.Uint64("listenerID", listenerID))
-	return nil
+	slog.Info("demo server started successfully", slog.String("addr", addr), slog.Uint64("serverID", serverID))
+	return
 }

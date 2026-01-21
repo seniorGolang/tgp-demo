@@ -5,8 +5,11 @@
 package wasm
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 )
 
 // infoHandler обрабатывает запрос на получение информации о плагине.
@@ -14,7 +17,7 @@ func infoHandler() (resp infoResponse, err error) {
 
 	// pluginInstance объявлен в execute.go
 	if pluginInstance == nil {
-		return infoResponse{}, fmt.Errorf("plugin instance not set")
+		return infoResponse{}, fmt.Errorf(i18n.Msg("plugin instance not set"))
 	}
 
 	info, err := pluginInstance.Info()
@@ -25,7 +28,7 @@ func infoHandler() (resp infoResponse, err error) {
 	// Сериализуем plugin.Info в JSON
 	infoBytes, err := json.Marshal(info)
 	if err != nil {
-		return infoResponse{}, fmt.Errorf("failed to marshal info: %w", err)
+		return infoResponse{}, fmt.Errorf(i18n.Msg("failed to marshal info")+": %w", err)
 	}
 
 	resp.Info = json.RawMessage(infoBytes)

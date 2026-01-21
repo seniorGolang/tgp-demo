@@ -194,7 +194,7 @@ jobs:
               echo "    dependencies:" >> release/manifest.yml
               echo "$PLUGIN_DEPS" | jq -r '.[]' | while IFS= read -r dep; do
                 if [ -n "$dep" ]; then
-                  echo "      - package: '$dep'" >> release/manifest.yml
+                  echo "      - '$dep'" >> release/manifest.yml
                 fi
               done
             fi

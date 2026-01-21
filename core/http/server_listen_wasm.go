@@ -5,19 +5,61 @@ package http
 
 import (
 	"net/http"
+	"sync"
 
-	"tgp/core/net"
+	"tgp/core/wasm"
+)
+
+var (
+	handlerMap   = make(map[uint64]http.Handler)
+	handlerIDGen uint64
+	handlerMu    sync.Mutex
 )
 
 // ListenAndServe запускает HTTP сервер на указанном адресе.
-func ListenAndServe(addr string, handler http.Handler) (err error) {
+// Неблокирующая функция - возвращает управление сразу после запуска сервера.
+// Возвращает serverID для последующей остановки сервера через StopServerByID.
+func ListenAndServe(addr string, handler http.Handler) (serverID uint64, err error) {
 
-	listener, err := net.Listen(net.NetworkTCP, addr)
-	if err != nil {
-		return err
+	// Регистрируем обработчик и получаем handler_id
+	handlerID := registerHandler(handler)
+
+	// Преобразуем адрес в указатель
+	addrPtr, addrLen := wasm.StringToPtr(addr)
+	defer wasm.Free(addrPtr)
+
+	// Вызываем хост-функцию для запуска сервера
+	ret := hostListenAndServe(addrPtr, addrLen, handlerID)
+
+	// Проверяем ошибку
+	if err = wasm.HandleHostError(ret); err != nil {
+		return 0, err
 	}
-	defer listener.Close()
 
-	// Используем стандартную http.Serve, которая делает цикл Accept() и обработку соединений
-	return http.Serve(listener, handler)
+	// ret содержит serverID в младших 32 битах
+	serverID = uint64(uint32(ret))
+
+	return serverID, nil
+}
+
+// registerHandler регистрирует обработчик и возвращает его ID.
+func registerHandler(handler http.Handler) (handlerID uint64) {
+
+	handlerMu.Lock()
+	defer handlerMu.Unlock()
+
+	handlerIDGen++
+	handlerMap[handlerIDGen] = handler
+
+	return handlerIDGen
+}
+
+// getHandler получает обработчик по ID.
+func getHandler(handlerID uint64) (handler http.Handler, ok bool) {
+
+	handlerMu.Lock()
+	defer handlerMu.Unlock()
+
+	handler, ok = handlerMap[handlerID]
+	return
 }

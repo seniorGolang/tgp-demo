@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 	"unsafe"
+
+	"tgp/core/i18n"
 )
 
 // CallHostReadWrite вызывает host функцию для чтения/записи данных.
@@ -19,19 +21,19 @@ func CallHostReadWrite(fn func(connID uint64, bPtr uint32, bLen uint32, nPtr uin
 	// Выделяем память для n (4 байта для uint32)
 	nPtr := Malloc(4)
 	if nPtr == 0 {
-		return 0, fmt.Errorf("failed to allocate memory for n")
+		return 0, fmt.Errorf(i18n.Msg("failed to allocate memory for n"))
 	}
 	defer Free(nPtr)
 
 	// Получаем указатель на буфер
 	bPtr := bytesToPtr(buffer)
 	if bPtr > uint64(^uint32(0)) {
-		return 0, fmt.Errorf("buffer pointer too large: %d", bPtr)
+		return 0, fmt.Errorf(i18n.Msg("buffer pointer too large: %d"), bPtr)
 	}
 
 	bLen := len(buffer)
 	if bLen > int(^uint32(0)) {
-		return 0, fmt.Errorf("buffer length out of range: %d", bLen)
+		return 0, fmt.Errorf(i18n.Msg("buffer length out of range: %d"), bLen)
 	}
 
 	bPtr32 := uint32(bPtr)
@@ -50,7 +52,7 @@ func CallHostReadWrite(fn func(connID uint64, bPtr uint32, bLen uint32, nPtr uin
 	nRead := *(*uint32)(unsafe.Pointer(uintptr(nPtr)))
 
 	if nRead > ^uint32(0)>>1 {
-		return 0, fmt.Errorf("read count too large: %d", nRead)
+		return 0, fmt.Errorf(i18n.Msg("read count too large: %d"), nRead)
 	}
 
 	return int(nRead), nil
@@ -76,13 +78,13 @@ func CallHostUint64WithDeadline(fn func(connID uint64, deadline uint64) uint64, 
 func readUint32FromPtrNoFree(ptr uint32) (value uint32, err error) {
 
 	if ptr == 0 {
-		return 0, fmt.Errorf("invalid pointer: 0")
+		return 0, fmt.Errorf(i18n.Msg("invalid pointer: 0"))
 	}
 
 	// Читаем 4 байта
 	data := PtrToByte(ptr, 4)
 	if len(data) < 4 {
-		return 0, fmt.Errorf("invalid data size: expected 4, got %d", len(data))
+		return 0, fmt.Errorf(i18n.Msg("invalid data size: expected 4, got %d"), len(data))
 	}
 
 	// Парсим uint32 (little-endian)
@@ -107,7 +109,7 @@ func CallHostDial(fn func(networkPtr uint32, networkLen uint32, addressPtr uint3
 	// Выделяем память для connID (4 байта для uint32)
 	connIDPtr := Malloc(4)
 	if connIDPtr == 0 {
-		return 0, fmt.Errorf("failed to allocate memory for connID")
+		return 0, fmt.Errorf(i18n.Msg("failed to allocate memory for connID"))
 	}
 	defer Free(connIDPtr)
 
@@ -122,7 +124,7 @@ func CallHostDial(fn func(networkPtr uint32, networkLen uint32, addressPtr uint3
 	// Читаем connID из памяти
 	connID, err = readUint32FromPtrNoFree(connIDPtr)
 	if err != nil {
-		return 0, fmt.Errorf("failed to read connID: %w", err)
+		return 0, fmt.Errorf(i18n.Msg("failed to read connID")+": %w", err)
 	}
 
 	return connID, nil
@@ -155,7 +157,7 @@ func CallHostDialWithContext(ctx context.Context, fn func(deadline uint64, netwo
 	// Выделяем память для connID (4 байта для uint32)
 	connIDPtr := Malloc(4)
 	if connIDPtr == 0 {
-		return 0, fmt.Errorf("failed to allocate memory for connID")
+		return 0, fmt.Errorf(i18n.Msg("failed to allocate memory for connID"))
 	}
 	defer Free(connIDPtr)
 
@@ -170,7 +172,7 @@ func CallHostDialWithContext(ctx context.Context, fn func(deadline uint64, netwo
 	// Читаем connID из памяти
 	connID, err = readUint32FromPtrNoFree(connIDPtr)
 	if err != nil {
-		return 0, fmt.Errorf("failed to read connID: %w", err)
+		return 0, fmt.Errorf(i18n.Msg("failed to read connID")+": %w", err)
 	}
 
 	return connID, nil

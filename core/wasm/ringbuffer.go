@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+
+	"tgp/core/i18n"
 )
 
 const (
@@ -53,7 +55,7 @@ func ReadRingBufferHeader(bufferPtr uint32) (header RingBufferHeader, err error)
 func ReadIndicesAndClosed(bufferPtr uint32) (readIdx uint32, writeIdx uint32, closed uint32, err error) {
 
 	if bufferPtr == 0 {
-		return 0, 0, 0, errors.New("invalid buffer pointer: zero")
+		return 0, 0, 0, errors.New(i18n.Msg("invalid buffer pointer: zero"))
 	}
 
 	// Читаем только 12 байт: ReadIndex (8-11) + WriteIndex (12-15) + Closed (16-19)
@@ -74,7 +76,7 @@ func ReadIndicesAndClosed(bufferPtr uint32) (readIdx uint32, writeIdx uint32, cl
 func ReadClosedFlag(bufferPtr uint32) (closed uint32, err error) {
 
 	if bufferPtr == 0 {
-		return 0, errors.New("invalid buffer pointer: zero")
+		return 0, errors.New(i18n.Msg("invalid buffer pointer: zero"))
 	}
 
 	// Читаем только 4 байта: Closed (16-19)
@@ -114,7 +116,7 @@ func AvailableWrite(readIdx uint32, writeIdx uint32, dataSize uint32) (available
 	return available
 }
 
-// UpdateRingBufferReadIndex атомарно обновляет индекс чтения в WASM памяти.
+// UpdateRingBufferReadIndex обновляет индекс чтения в WASM памяти.
 func UpdateRingBufferReadIndex(bufferPtr uint32, readIndex uint32) (err error) {
 
 	readIndexPtr := bufferPtr + 8 // Смещение для ReadIndex
@@ -129,7 +131,7 @@ func UpdateRingBufferReadIndex(bufferPtr uint32, readIndex uint32) (err error) {
 	return nil
 }
 
-// UpdateRingBufferWriteIndex атомарно обновляет индекс записи в WASM памяти.
+// UpdateRingBufferWriteIndex обновляет индекс записи в WASM памяти.
 func UpdateRingBufferWriteIndex(bufferPtr uint32, writeIndex uint32) (err error) {
 
 	writeIndexPtr := bufferPtr + 12 // Смещение для WriteIndex
@@ -172,7 +174,7 @@ func ReadFromRingBuffer(bufferPtr uint32, dataSize uint32, data []byte) (read in
 	// Проверяем переполнение при конвертации int -> uint32
 	dataLen := len(data)
 	if dataLen < 0 || dataLen > int(^uint32(0)) {
-		return 0, errors.New("data length out of range")
+		return 0, errors.New(i18n.Msg("data length out of range"))
 	}
 	toRead := uint32(dataLen)
 	if toRead > available {
@@ -211,7 +213,7 @@ func ReadFromRingBuffer(bufferPtr uint32, dataSize uint32, data []byte) (read in
 	// Копируем данные в выходной буфер
 	copy(data, readData)
 
-	// Атомарно обновляем ReadIndex
+	// обновляем ReadIndex
 	if err = UpdateRingBufferReadIndex(bufferPtr, readIdx); err != nil {
 		return 0, err
 	}
@@ -247,7 +249,7 @@ func WriteToRingBuffer(bufferPtr uint32, dataSize uint32, data []byte) (written 
 	// Проверяем переполнение при конвертации int -> uint32
 	dataLen := len(data)
 	if dataLen < 0 || dataLen > int(^uint32(0)) {
-		return 0, errors.New("data length out of range")
+		return 0, errors.New(i18n.Msg("data length out of range"))
 	}
 	toWrite := uint32(dataLen)
 	if toWrite > available {
@@ -277,7 +279,7 @@ func WriteToRingBuffer(bufferPtr uint32, dataSize uint32, data []byte) (written 
 		writeIdx = secondPart
 	}
 
-	// Атомарно обновляем WriteIndex
+	// обновляем WriteIndex
 	if err = UpdateRingBufferWriteIndex(bufferPtr, writeIdx); err != nil {
 		return 0, err
 	}

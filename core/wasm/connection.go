@@ -6,9 +6,12 @@ package wasm
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"log/slog"
+
+	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 )
 
 // onNewConnectionHandler обрабатывает новое соединение.
@@ -18,7 +21,7 @@ func onNewConnectionHandler(ptr uint32, size uint32) (result uint64) {
 
 	// Проверяем размер данных (16 байт: 8 для listenerID + 8 для connID)
 	if size != 16 {
-		slog.Error("onNewConnectionHandler: invalid size", "expected", 16, "got", size)
+		slog.Error(i18n.Msg("onNewConnectionHandler: invalid size"), slog.Int("expected", 16), slog.Int("got", int(size)))
 		errorBytes, _ := json.Marshal(map[string]string{
 			"error": fmt.Sprintf("invalid data size: expected 16 (listenerID + connID), got %d", size),
 		})
@@ -46,7 +49,7 @@ func onNewConnectionHandler(ptr uint32, size uint32) (result uint64) {
 func handleNewConnection(listenerID, connID uint64) {
 
 	if netHandleNewConnection == nil {
-		slog.Error("handleNewConnection: netHandleNewConnection is nil", "listenerID", listenerID, "connID", connID)
+		slog.Error(i18n.Msg("handleNewConnection: netHandleNewConnection is nil"), slog.Uint64("listenerID", listenerID), slog.Uint64("connID", connID))
 		return
 	}
 

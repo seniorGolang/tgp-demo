@@ -5,10 +5,12 @@
 package wasm
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/goccy/go-json"
+
 	"tgp/core/data"
+	"tgp/core/i18n"
 	"tgp/core/plugin"
 )
 
@@ -37,7 +39,7 @@ func executeHandler(req executeRequest) (resp executeResponse, err error) {
 
 	// Вызываем метод Execute плагина
 	if pluginInstance == nil {
-		return executeResponse{}, fmt.Errorf("plugin instance not set")
+		return executeResponse{}, fmt.Errorf(i18n.Msg("plugin instance not set"))
 	}
 
 	response, err := pluginInstance.Execute(req.RootDir, requestStorage, req.Path...)

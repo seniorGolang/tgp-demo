@@ -27,11 +27,11 @@ type planStep struct {
 
 // Server управляет HTTP сервером демо.
 type Server struct {
-	rootDir    string
-	request    data.Storage
-	listenerID uint64
-	tasks      map[uint32]*TaskState
-	tasksMu    sync.RWMutex
+	rootDir  string
+	request  data.Storage
+	serverID uint64
+	tasks    map[uint32]*TaskState
+	tasksMu  sync.RWMutex
 }
 
 // TaskState представляет состояние задачи.
@@ -65,7 +65,7 @@ type EchoResult struct {
 type ServerStatusResult struct {
 	Status     string   `json:"status"`
 	Message    string   `json:"message"`
-	ListenerID uint64   `json:"listenerID,omitempty"`
+	ListenerID uint64   `json:"serverID,omitempty"`
 	Endpoints  []string `json:"endpoints"`
 }
 

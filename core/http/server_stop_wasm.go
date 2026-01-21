@@ -6,20 +6,22 @@ package http
 import (
 	"log/slog"
 
-	"tgp/core/net"
+	"tgp/core/i18n"
+	"tgp/core/wasm"
 )
 
-// StopListenerByID останавливает HTTP сервер, закрывая listener по его ID.
-func StopListenerByID(listenerID uint64) (err error) {
+// StopServerByID останавливает HTTP сервер по его ID.
+func StopServerByID(serverID uint64) (err error) {
 
-	// Удаляем connectionHandler для этого listener
-	net.RemoveConnectionHandler(listenerID)
+	// Вызываем хост-функцию для остановки сервера
+	ret := hostStopServer(serverID)
 
-	// Закрываем listener, что остановит цикл Accept() на хосте
-	if err = net.CloseListenerByID(listenerID); err != nil {
-		slog.Error("StopListenerByID: failed to close listener", "listenerID", listenerID, "error", err)
+	// Обрабатываем ошибку
+	if err = wasm.HandleHostError(ret); err != nil {
+		slog.Error(i18n.Msg("StopServerByID: failed to stop server"), slog.Uint64("serverID", serverID), slog.String("error", err.Error()))
 		return
 	}
-	slog.Debug("StopListenerByID: listener has been stopped", "listenerID", listenerID)
+
+	slog.Info(i18n.Msg("StopServerByID: server has been stopped"), slog.Uint64("serverID", serverID))
 	return
 }

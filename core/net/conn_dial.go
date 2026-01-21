@@ -6,10 +6,12 @@ package net
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"net"
 
+	"github.com/goccy/go-json"
+
+	"tgp/core/i18n"
 	"tgp/core/wasm"
 )
 
@@ -72,7 +74,7 @@ func DialTLSWithConfig(network, address string, config TLSConfig) (conn net.Conn
 	// Кодируем config в JSON
 	configJSONBytes, err := json.Marshal(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode TLS config: %w", err)
+		return nil, fmt.Errorf(i18n.Msg("failed to encode TLS config")+": %w", err)
 	}
 
 	// Преобразуем строки в указатели
@@ -88,7 +90,7 @@ func DialTLSWithConfig(network, address string, config TLSConfig) (conn net.Conn
 	// Выделяем память для connID (4 байта для uint32)
 	connIDPtr := wasm.Malloc(4)
 	if connIDPtr == 0 {
-		return nil, fmt.Errorf("failed to allocate memory for connID")
+		return nil, fmt.Errorf(i18n.Msg("failed to allocate memory for connID"))
 	}
 	defer wasm.Free(connIDPtr)
 
@@ -103,7 +105,7 @@ func DialTLSWithConfig(network, address string, config TLSConfig) (conn net.Conn
 	// Читаем connID из памяти
 	connIDBytes := wasm.PtrToByte(connIDPtr, 4)
 	if len(connIDBytes) < 4 {
-		return nil, fmt.Errorf("invalid connID data size")
+		return nil, fmt.Errorf(i18n.Msg("invalid connID data size"))
 	}
 	connID := binary.LittleEndian.Uint32(connIDBytes)
 
@@ -115,7 +117,7 @@ func TLSHandshake(conn net.Conn) (err error) {
 
 	wasmConn, ok := conn.(*Conn)
 	if !ok {
-		return fmt.Errorf("connection is not a WASM connection")
+		return fmt.Errorf(i18n.Msg("connection is not a WASM connection"))
 	}
 
 	// Вызываем host функцию

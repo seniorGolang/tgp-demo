@@ -14,7 +14,7 @@ func (s *Server) handleServerStatus(w http.ResponseWriter, r *http.Request) {
 	result := ServerStatusResult{
 		Status:     "running",
 		Message:    i18n.Msg("HTTP server is running and operational"),
-		ListenerID: s.listenerID,
+		ListenerID: s.serverID,
 		Endpoints: []string{
 			"GET  /",
 			"GET  /style.css",
@@ -47,7 +47,7 @@ func (s *Server) handleServerStatus(w http.ResponseWriter, r *http.Request) {
 // handleStop обрабатывает запрос на остановку сервера.
 func (s *Server) handleStop(w http.ResponseWriter, r *http.Request) {
 
-	slog.Info(fmt.Sprintf("stop server request: path=%s listenerID=%d", r.URL.Path, s.listenerID))
+	slog.Info(fmt.Sprintf("stop server request: path=%s serverID=%d", r.URL.Path, s.serverID))
 
 	result := StopResult{
 		Message: i18n.Msg("Server will be stopped."),
@@ -55,15 +55,15 @@ func (s *Server) handleStop(w http.ResponseWriter, r *http.Request) {
 	}
 	s.writeHTML(w, http.StatusOK, formatResult(result))
 
-	if s.listenerID != 0 {
-		if stopErr := http.StopListenerByID(s.listenerID); stopErr != nil {
-			slog.Error("failed to stop server", slog.Uint64("listenerID", s.listenerID), slog.Any("error", stopErr))
+	if s.serverID != 0 {
+		if stopErr := http.StopServerByID(s.serverID); stopErr != nil {
+			slog.Error("failed to stop server", slog.Uint64("serverID", s.serverID), slog.Any("error", stopErr))
 		} else {
-			slog.Info("server stopped successfully", slog.Uint64("listenerID", s.listenerID))
-			s.listenerID = 0
+			slog.Info("server stopped successfully", slog.Uint64("serverID", s.serverID))
+			s.serverID = 0
 		}
 	} else {
-		slog.Info("listenerID not set, server will stop automatically when Execute completes")
+		slog.Info("serverID not set, server will stop automatically when Execute completes")
 	}
 
 	if cleanupErr := CleanupTempDir(); cleanupErr != nil {
