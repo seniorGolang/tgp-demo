@@ -29,7 +29,7 @@ func (s *Server) handleHostInfo(w http.ResponseWriter, r *http.Request) {
 		if stdoutPipe, err = cmd.StdoutPipe(); err != nil {
 			slog.Warn("failed to create stdout pipe for uname", slog.Any("error", err))
 		} else {
-			defer stdoutPipe.Close()
+			defer func() { _ = stdoutPipe.Close() }()
 
 			var stdoutBytes []byte
 			var readErr error
@@ -57,7 +57,7 @@ func (s *Server) handleHostInfo(w http.ResponseWriter, r *http.Request) {
 		if stdoutPipe, err = cmd2.StdoutPipe(); err != nil {
 			slog.Warn("failed to create stdout pipe for go version", slog.Any("error", err))
 		} else {
-			defer stdoutPipe.Close()
+			defer func() { _ = stdoutPipe.Close() }()
 
 			var stdoutBytes []byte
 			var readErr error
@@ -85,7 +85,7 @@ func (s *Server) handleHostInfo(w http.ResponseWriter, r *http.Request) {
 		if stdoutPipe, err = cmd3.StdoutPipe(); err != nil {
 			slog.Warn("failed to create stdout pipe for date", slog.Any("error", err))
 		} else {
-			defer stdoutPipe.Close()
+			defer func() { _ = stdoutPipe.Close() }()
 
 			var stdoutBytes []byte
 			var readErr error

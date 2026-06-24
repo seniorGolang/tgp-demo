@@ -8,10 +8,9 @@ import (
 )
 
 // NewServer создает новый сервер демо.
-func NewServer(rootDir string, request data.Storage) (s *Server) {
+func NewServer(request data.Storage) (s *Server) {
 
 	s = &Server{
-		rootDir: rootDir,
 		request: request,
 		tasks:   make(map[uint32]*TaskState),
 	}

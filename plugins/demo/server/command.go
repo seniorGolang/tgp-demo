@@ -64,7 +64,7 @@ func (s *Server) handleCommand(w http.ResponseWriter, r *http.Request) {
 		s.writeHTML(w, http.StatusOK, formatResult(result))
 		return
 	}
-	defer stdoutPipe.Close()
+	defer func() { _ = stdoutPipe.Close() }()
 
 	stderrBytes, err := io.ReadAll(stderrPipe)
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *Server) handleCommand(w http.ResponseWriter, r *http.Request) {
 		s.writeHTML(w, http.StatusOK, formatResult(result))
 		return
 	}
-	defer stderrPipe.Close()
+	defer func() { _ = stdoutPipe.Close() }()
 
 	waitErr := cmd.Wait()
 

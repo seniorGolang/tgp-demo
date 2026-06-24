@@ -17,7 +17,7 @@ import (
 type DemoPlugin struct{}
 
 // Execute выполняет основную логику плагина.
-func (p *DemoPlugin) Execute(rootDir string, request data.Storage, path ...string) (response data.Storage, err error) {
+func (p *DemoPlugin) Execute(request data.Storage) (response data.Storage, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -46,7 +46,7 @@ func (p *DemoPlugin) Execute(rootDir string, request data.Storage, path ...strin
 		}
 	}
 
-	srv := server.NewServer(rootDir, request)
+	srv := server.NewServer(request)
 
 	defer func() {
 		if cleanupErr := server.CleanupTempDir(); cleanupErr != nil {
@@ -90,9 +90,8 @@ func (p *DemoPlugin) Info() (info plugin.Info, err error) {
 		AllowedHosts:     []string{"localhost", "127.0.0.1", "httpbin.org"},
 		AllowedShellCMDs: []string{"uname", "go", "date"},
 		AllowedEnvVars:   []string{"PATH", "HOME", "USER", "GOROOT", "GOPATH"},
-		AllowedPaths: map[string]string{
-			"@tg/tmp": "w",
-		},
+		AllowedPaths:     map[string]string{"@tg/tmp": "w"},
+		AllowedListeners: []string{"tcp/*"},
 	}
 	return
 }

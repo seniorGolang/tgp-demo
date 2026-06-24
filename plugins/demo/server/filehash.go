@@ -122,7 +122,7 @@ func (s *Server) handleFileHash(w http.ResponseWriter, r *http.Request) {
 
 				fileData, err := io.ReadAll(part)
 				if err == nil {
-					defer part.Close()
+					defer func() { _ = part.Close() }()
 
 					result.FileSize = int64(len(fileData))
 
